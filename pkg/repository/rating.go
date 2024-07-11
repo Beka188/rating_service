@@ -181,6 +181,15 @@ func (r *RatingRepository) GetUserRating(userID int) (model.Rating, error) {
 func (r *RatingRepository) UpdateUserRating(userID int, increment bool) (model.Rating, error) {
 	var newRating model.Rating
 
+	var userExists bool
+	err := r.Db.QueryRow("SELECT EXISTS(SELECT 1 FROM rating WHERE UserID = ?)", userID).Scan(&userExists)
+	if err != nil {
+		return newRating, fmt.Errorf("error checking if user exists: %v", err)
+	}
+	if !userExists {
+		return newRating, fmt.Errorf("user with ID %d does not exist", userID)
+	}
+
 	var updateScoreSQL string
 	if increment {
 		updateScoreSQL = "UPDATE rating SET Score = Score + 1 WHERE UserID = ?"

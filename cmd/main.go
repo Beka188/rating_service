@@ -61,7 +61,7 @@ func main() {
 
 	})
 
-	r.GET("/rating/:id/:action", func(c *gin.Context) {
+	r.PUT("/rating/:id/:action", func(c *gin.Context) {
 		idStr := c.Param("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
@@ -72,16 +72,19 @@ func main() {
 		switch action {
 		case "increment":
 			newRating, err = ratingRepo.UpdateUserRating(id, true)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
 		case "decrement":
 			newRating, err = ratingRepo.UpdateUserRating(id, false)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid action"})
+			return
+		}
+		if err != nil {
+			if err.Error() == fmt.Sprintf("user with ID %d does not exist", id) {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 		c.JSON(http.StatusOK, newRating)
 	})
