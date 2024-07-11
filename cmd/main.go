@@ -19,27 +19,15 @@ import (
 func main() {
 	ratingRepo := repository.NewRatingRepository()
 
-	//dropTableSQL := `DROP TABLE IF EXISTS Rating;`
-	//
-	//_, err := ratingRepo.Db.Exec(dropTableSQL)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//rat, err := ratingRepo.GetUserRating(4)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//fmt.Println(rat)
-	//ratingRepo.InsertRating(3, 10)
-	//ratingRepo.DecrementRating(2)
-	//fmt.Println(time.Now())
-	//fmt.Println(ratingRepo.GetAllRatings(""))
-	//
 	r := gin.Default()
 	r.GET("/rating", func(c *gin.Context) {
-		allRatings, err := ratingRepo.GetAllRatings("asc")
+		sortBy := c.DefaultQuery("sortBy", "+date")
+		allRatings, err := ratingRepo.GetAllRatings(sortBy)
 		if err != nil {
-			fmt.Println(err)
+			if err.Error() == fmt.Sprintf("invalid order: %s", sortBy) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
 		c.JSON(http.StatusOK, allRatings)
@@ -88,10 +76,6 @@ func main() {
 		}
 		c.JSON(http.StatusOK, newRating)
 	})
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
-
-	//for _, row := range allRatings {
-	//	fmt.Println(row.ID, row.UserID, row.Score)
-	//}
+	r.Run() // listen and serve on 0.0.0.0:8080
 
 }

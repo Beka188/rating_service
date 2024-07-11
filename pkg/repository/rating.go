@@ -1,13 +1,10 @@
 package repository
 
 import (
+	"PoliticianRating/pkg/model"
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
-
-	// Import your models if needed
-	"PoliticianRating/pkg/model"
 )
 
 type RatingRepository struct {
@@ -54,74 +51,20 @@ func NewRatingRepository() *RatingRepository {
 	return &RatingRepository{Db: db}
 }
 
-func (r *RatingRepository) InsertRating(userID int, score int) error {
-	var exists bool
-	checkUserSQL := `SELECT EXISTS(SELECT 1 FROM rating WHERE userId = ?)`
-	err := r.Db.QueryRow(checkUserSQL, userID).Scan(&exists)
-	if err != nil {
-		fmt.Println("Error checking for user:", err)
-		return err
-	}
-	newRating := model.Rating{
-		UserID: userID,
-		Score:  score,
-	}
-	if !exists {
-		insertRatingSQL := `INSERT INTO rating (UserID, Score) VALUES (?, ?)`
-		_, err := r.Db.Exec(insertRatingSQL, newRating.UserID, newRating.Score)
-		if err != nil {
-			return fmt.Errorf("error inserting rating: %v", err)
-		}
-		return nil
-	}
-	return fmt.Errorf("user with ID %d already has a rating", userID)
-}
-
-func (r *RatingRepository) IncrementRating(userId int) {
-	incrementScoreSQL := `UPDATE rating SET Score = Score + 1, UpdatedAt = ? WHERE UserID = ?`
-	stmt, err := r.Db.Prepare(incrementScoreSQL)
-	if err != nil {
-		fmt.Println("Error preparing update statement:", err)
-		return
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(time.Now(), userId)
-	if err != nil {
-		fmt.Println("Error executing update statement:", err)
-		return
-	}
-
-	fmt.Println("User score incremented successfully")
-}
-
-func (r *RatingRepository) DecrementRating(userId int) {
-	incrementScoreSQL := `UPDATE rating SET Score = Score - 1 WHERE UserID = ?`
-	stmt, err := r.Db.Prepare(incrementScoreSQL)
-	if err != nil {
-		fmt.Println("Error preparing update statement:", err)
-		return
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(userId)
-	if err != nil {
-		fmt.Println("Error executing update statement:", err)
-		return
-	}
-
-	fmt.Println("User score decremented successfully")
-}
-
 func (r *RatingRepository) GetAllRatings(order string) ([]model.Rating, error) {
 	var ratings []model.Rating
 	var orderBy string
 	switch order {
-	case "asc":
+	case "+score":
 		orderBy = "ORDER BY Score ASC"
-	case "desc":
+	case "-score":
 		orderBy = "ORDER BY Score DESC"
+	case "+date":
+		orderBy = "ORDER BY UpdatedAt ASC"
+	case "-date":
+		orderBy = "ORDER BY UpdatedAt DESC"
 	default:
-		orderBy = "" // Default to no sorting
+		return nil, fmt.Errorf("invalid order: %s", order)
 	}
 
 	selectAllSQL := fmt.Sprintf("SELECT ID, UserId, Score, CreatedAt, UpdatedAt FROM rating %s", orderBy)
@@ -139,23 +82,10 @@ func (r *RatingRepository) GetAllRatings(order string) ([]model.Rating, error) {
 		}
 		ratings = append(ratings, rating)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over ratings: %v", err)
 	}
-
 	return ratings, nil
-}
-
-func (r *RatingRepository) DeleteUser(userID int) error {
-	deleteSQL := `DELETE FROM rating WHERE UserID = ?`
-
-	_, err := r.Db.Exec(deleteSQL, userID)
-	if err != nil {
-		return fmt.Errorf("error deleting user: %v", err)
-	}
-
-	return nil
 }
 
 func (r *RatingRepository) GetUserRating(userID int) (model.Rating, error) {
@@ -168,13 +98,10 @@ func (r *RatingRepository) GetUserRating(userID int) (model.Rating, error) {
 	if !row.Next() {
 		return rating, fmt.Errorf("no rating found for user ID %d", userID)
 	}
-
-	//for row.Next() {
 	err2 := row.Scan(&rating.ID, &rating.UserID, &rating.Score, &rating.CreatedAt, &rating.UpdatedAt)
 	if err2 != nil {
 		return rating, fmt.Errorf("error scanning ratings: %v", err2)
 	}
-	//}
 	return rating, nil
 }
 
@@ -220,11 +147,44 @@ func (r *RatingRepository) UpdateUserRating(userID int, increment bool) (model.R
 			return newRating, fmt.Errorf("error scanning new rating row: %v", err)
 		}
 	}
-
 	if increment {
 		fmt.Println("User score incremented successfully")
 	} else {
 		fmt.Println("User score decremented successfully")
 	}
 	return newRating, nil
+}
+
+func (r *RatingRepository) InsertRating(userID int, score int) error {
+	var exists bool
+	checkUserSQL := `SELECT EXISTS(SELECT 1 FROM rating WHERE userId = ?)`
+	err := r.Db.QueryRow(checkUserSQL, userID).Scan(&exists)
+	if err != nil {
+		fmt.Println("Error checking for user:", err)
+		return err
+	}
+	newRating := model.Rating{
+		UserID: userID,
+		Score:  score,
+	}
+	if !exists {
+		insertRatingSQL := `INSERT INTO rating (UserID, Score) VALUES (?, ?)`
+		_, err := r.Db.Exec(insertRatingSQL, newRating.UserID, newRating.Score)
+		if err != nil {
+			return fmt.Errorf("error inserting rating: %v", err)
+		}
+		return nil
+	}
+	return fmt.Errorf("user with ID %d already has a rating", userID)
+}
+
+func (r *RatingRepository) DeleteUser(userID int) error {
+	deleteSQL := `DELETE FROM rating WHERE UserID = ?`
+
+	_, err := r.Db.Exec(deleteSQL, userID)
+	if err != nil {
+		return fmt.Errorf("error deleting user: %v", err)
+	}
+
+	return nil
 }
