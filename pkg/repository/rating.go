@@ -105,6 +105,15 @@ func (r *RatingRepository) GetUserRating(userID int) (model.Rating, error) {
 	return rating, nil
 }
 
+// UpdateUserRating godoc
+// @Summary      Show an account
+// @Description  get string by ID
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Account ID"
+// @Success      200  {object}  model.Rating
+// @Router       /rating/{id} [put]
 func (r *RatingRepository) UpdateUserRating(userID int, increment bool) (model.Rating, error) {
 	var newRating model.Rating
 
