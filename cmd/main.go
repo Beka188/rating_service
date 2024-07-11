@@ -12,25 +12,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// @title           Swagger Example API
+// @title           Rating Service API
 // @version         1.0
-// @description     This is a sample server celler server.
+// @description		This server is part of the Politician application, which allows users to view and update ratings for politicians. It uses the Gin framework for handling HTTP requests and provides endpoints for retrieving all ratings, retrieving a specific rating by ID, and updating a rating based on an action (increment or decrement)
 // @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
 
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host      localhost:8080
-// @BasePath  /api/v1
 
-// @securityDefinitions.basic  BasicAuth
-
-// @externalDocs.description  OpenAPI
-// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	errDb := database.InitDB()
 	if errDb != nil {

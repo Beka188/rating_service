@@ -6,6 +6,14 @@ import (
 	"fmt"
 )
 
+// GetAllRatings godoc
+// @Summary      Show all ratings
+// @Description  get all ratings, optionally can sort by date (date or -date), and score (score or +score)
+// @Accept       json
+// @Produce      json
+// @Param sortBy query string false "Sort by"
+// @Success      200  {object}  model.Rating
+// @Router       /rating/ [get]
 func GetAllRatings(order string) ([]model.Rating, error) {
 	var ratings []model.Rating
 	var orderBy string

@@ -16,7 +16,7 @@ func GetAllRatings(c *gin.Context) {
 		if err.Error() == fmt.Sprintf("invalid order: %s", sortBy) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, allRatings)
